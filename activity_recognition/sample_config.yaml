@@ -1,0 +1,15 @@
+augmentations:
+-   CenterCrop:
+        initialize_params:
+            size:
+            - 100
+            - 100
+-   OneOf:
+        children:
+        -   TemporalBeginCrop:
+                initialize_params:
+                    size: 10
+        -   Add: {}
+        type: group
+dst_path: test_vid_dataset/augmented
+src_path: test_vid_dataset/original

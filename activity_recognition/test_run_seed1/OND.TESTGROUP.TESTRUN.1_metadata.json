@@ -1,0 +1,16 @@
+{
+    "actual_novel_activities": [
+        "Drumming",
+        "Haircut"
+    ],
+    "degree": 1,
+    "detection": 7,
+    "known_classes": 2,
+    "max_novel_classes": 2,
+    "novel_classes": 2,
+    "novel_type": "spatial",
+    "prob_novel": 0.5,
+    "protocol": "OND",
+    "red_light": "test_vid_dataset/original/Haircut/v_Haircut_g01_c01.avi",
+    "seed": 1
+}
