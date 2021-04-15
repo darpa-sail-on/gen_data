@@ -5,12 +5,20 @@
     ],
     "degree": 1,
     "detection": 7,
+    "difficulty": null,
+    "distribution": null,
+    "feedback_max_ids": null,
     "known_classes": 2,
     "max_novel_classes": 2,
+    "n_rounds": null,
     "novel_classes": 2,
     "novel_type": "spatial",
+    "pre_novelty_batches": 7,
     "prob_novel": 0.5,
     "protocol": "OND",
     "red_light": "test_vid_dataset/original/Haircut/v_Haircut_g01_c01.avi",
-    "seed": 1
+    "representation": null,
+    "round_size": 1,
+    "seed": 1,
+    "threshold": null
 }

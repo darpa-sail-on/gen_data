@@ -41,6 +41,8 @@ def gen_test(known_video_path,
         aug_type,
         #known_video_classes=None,
         prob_novel_class=0.5,
+        round_size=1,
+        protocol='OND',
         #prob_spatial_transform=0.5,
         #prob_temporal_transform=0.5,
         seed = None):
@@ -123,7 +125,9 @@ def gen_test(known_video_path,
             df.loc[len(df.index)] = [
                 vid, 1, 1, unknown_videos_dict[vid], is_spatial, is_temporal
             ]
-            
+            # TODO: decide what to do with red_light when at novelty_timestamp
+            # but sampling from known
+
             if unknown_videos_dict[vid] not in unknown_classes:
                 unknown_classes.append(unknown_videos_dict[vid])
             del unknown_videos[vid_id]
@@ -141,17 +145,25 @@ def gen_test(known_video_path,
             del known_videos[vid_id]
 
     metadata = {
-        'protocol' : 'OND',#protocol,
+        'protocol' : protocol,
+        'round_size' : round_size,
+        'difficulty' : None, # figure out what this should be
+        'distribution' : None, # figure out what this should be
+        'n_rounds' : None, # figure out what this should be
+        'representation' : None, # figure out what this should be
+        'threshold' : None, # figure out what this should be
+        'pre_novelty_batches' : red_light_det // round_size, # TODO: double check this
+        'feedback_max_ids' : None, # figure out what this should be
         'known_classes' : len(known_classes),
         'novel_classes' : len(unknown_classes),
-        'red_light' : red_light,
+        'red_light' : red_light, # see TODO comment above
         'detection' : red_light_det,
-        'degree': 1,
-        'prob_novel' : prob_novel_class,
+        'degree': 1, # shouldn't be hardcoded
+        'prob_novel' : prob_novel_class, # check not  'prop_novel'
         'novel_type' : aug_type,
         'seed' : seed,
-        "actual_novel_activities": list(class_str_to_int.keys()),
-        'max_novel_classes' : len(class_str_to_int),
+        "actual_novel_activities": list(class_str_to_int.keys()), # maybe wrong
+        'max_novel_classes' : len(class_str_to_int), # not sure what this means, likely wrong value
     }
     
     return df, metadata
@@ -214,24 +226,33 @@ def gen_test(known_video_path,
     type=float
 )
 @click.option(
+    '--round_size',
+    default=1,
+    type=int
+)
+@click.option(
     '--seed',
     default=None,
     type=int
 )
 def main(known_video_path, unknown_video_path, 
         output_test_dir, num_total_samples, novelty_timestamp, 
-        aug_type, prob_novel_sample, seed):
-    # TODO: don't regenerate augmentations each time
-    # TODO: handle augmentations from config
-    df, metadata = gen_test(known_video_path, unknown_video_path, 
-        num_total_samples, novelty_timestamp, 
-        aug_type, prob_novel_sample, seed = seed)    
-   
+        aug_type, prob_novel_sample, round_size, seed):
     # TODO: don't hardocde these
     protocol = 'OND'
     group_id = 'TESTGROUP'
     run_id = 'TESTRUN'
     seed_id = str(seed)
+    
+    df, metadata = gen_test(known_video_path, unknown_video_path, 
+        num_total_samples=num_total_samples, 
+        novelty_timestamp=novelty_timestamp, 
+        aug_type=aug_type, 
+        prob_novel_class=prob_novel_sample, 
+        round_size=round_size,
+        protocol=protocol,
+        seed = seed)    
+   
 
     output_test_base = os.path.join(output_test_dir,
         '{}.{}.{}.{}'.format(
