@@ -3,6 +3,58 @@ from vidaug import augmentors as va
 import torchvision
 import torch
 import numpy as np
+from collections import namedtuple
+
+class AugWrapper():
+    AugInfo = namedtuple("AugInfo", "type name")
+
+    def get_all_aug():
+        """
+        Returns a dictionary where the key is the augmentation, and the value is
+        a tuple, where the first element is 
+        either "spatial", "temporal", or "group" depending on what types of
+        augmentation it is. The second element is the string name for the
+        augmentation.
+
+        This is fully encompassing - it has all the augmentations in videoaug.
+        """
+        return {
+            va.group.OneOf: AugWrapper.AugInfo('group', 'OneOf'),
+            va.group.Sequential: AugWrapper.AugInfo('group','Sequential'),
+            va.group.SomeOf: AugWrapper.AugInfo('group', 'SomeOf'),
+            va.group.Sometimes: AugWrapper.AugInfo('group', 'Sometimes'),
+            va.intensity.Add: AugWrapper.AugInfo('spatial', 'Add'),
+            va.crop.CenterCrop: AugWrapper.AugInfo('spatial', 'CenterCrop'),
+            va.crop.CornerCrop: AugWrapper.AugInfo('spatial','CornerCrop'),
+            va.geometric.ElasticTransformation: AugWrapper.AugInfo('spatial',
+                'ElasticTransformation'),
+            va.geometric.GaussianBlur: AugWrapper.AugInfo('spatial',
+                'GaussianBlur'),
+            va.flip.HorizontalFlip: AugWrapper.AugInfo('spatial','HorizontalFlip'),
+            va.intensity.InvertColor: AugWrapper.AugInfo('spatial', 'InvertColor'),
+            va.intensity.Multiply: AugWrapper.AugInfo('spatial','Multiply'),
+            va.intensity.Pepper: AugWrapper.AugInfo('spatial','Pepper'),
+            va.geometric.PiecewiseAffineTransform: AugWrapper.AugInfo('spatial',
+                'PiecewiseAffineTransform'),
+            va.crop.RandomCrop: AugWrapper.AugInfo('spatial','RandomCrop'),
+            va.affine.RandomResize: AugWrapper.AugInfo('spatial', 'RandomResize'),
+            va.affine.RandomRotate: AugWrapper.AugInfo('spatial', 'RandomRotate'),
+            va.affine.RandomShear: AugWrapper.AugInfo('spatial', 'RandomShear'),
+            va.affine.RandomTranslate: AugWrapper.AugInfo('spatial', 'RandomTranslate'),
+            va.intensity.Salt: AugWrapper.AugInfo('spatial','Salt'),
+            va.geometric.Superpixel: AugWrapper.AugInfo('spatial','Superpixel'),
+            va.flip.VerticalFlip: AugWrapper.AugInfo('spatial','VerticalFlip'),
+            va.temporal.InverseOrder: AugWrapper.AugInfo('temporal','InverseOrder'),
+            va.temporal.TemporalBeginCrop:AugWrapper.AugInfo('temporal', 'TemporalBeginCrop'),
+            va.temporal.TemporalCenterCrop: AugWrapper.AugInfo('temporal','TemporalCenterCrop'),
+            va.temporal.TemporalElasticTransformation: AugWrapper.AugInfo('temporal',
+                'TemporalElasticTransformation'),
+            va.temporal.TemporalFit: AugWrapper.AugInfo('temporal', 'TemporalFit'),
+            va.temporal.TemporalRandomCrop: AugWrapper.AugInfo('temporal',
+                'TemporalRandomCrop'),
+            va.temporal.Downsample: AugWrapper.AugInfo('temporal', 'Downsample'),
+            va.temporal.Upsample:AugWrapper.AugInfo('temporal','Upsample')
+        }
 
 def load_video(video_path, start_pts = 0, end_pts = None):
     # TODO: add suport for if video_path is directory to images that together
@@ -28,53 +80,77 @@ def load_video(video_path, start_pts = 0, end_pts = None):
         fps = 25
     return vframes.numpy(), fps
 
+def get_aug(aug_name,
+        aug_type=None,
+        initialize_params={}):
+    """
+    Return 'augmentations with name 'aug_name' and optionally of type
+    'aug_type' if specified, where aug_type is either group, 
+    spatial, or temporal.
+
+    If multiple augmentations have the same name, then may give unexpected
+    behavior.
+
+    If augmentation not found, will raise ValueError.
+
+    Initialization parameters to the augmentation can be passed via
+    'initialize_params'. 'initiialize_params' should a be a dictionary, 
+    where the keys are the parameter names to initialize, 
+    and the values are the values to initialize with.
+    """
+    assert aug_type in ['group','spatial','temporal', None]
+    for (aug, (t,n)) in AugWrapper.get_all_aug().items():
+        if aug_name == n:
+            if aug_type is None or aug_type == t:
+                return aug(**initialize_params)
+    # no augmentation matched
+    raise ValueError('No aug of name {} and type {} found'.format(
+        aug_name, aug_type
+    ))
+
 # TODO: make sure these augs aren;t having any unexpected behavior from
 # sampling
-def get_random_group_aug():
-    group_augs = [
-        va.group.OneOf(),
-        va.group.Sequential(),
-        va.group.SomeOf(),
-        va.group.Sometimes()
-    ]
-    return np.random.choice(group_augs)
+def get_random_aug(aug_type, 
+        num_to_get=1, 
+        initialize_params={},
+        as_seq=False):
+    """
+    Return 'num_to_get' randomly selected augmentations 
+    of type 'aug_type', where aug_type is either group, 
+    spatial, or temporal.
 
-def get_random_spatial_aug():
-    #TODO: don;t have these fixed initializations
-    spatial_augs = [
-        va.intensity.Add(),
-        va.crop.CenterCrop(size=(240, 180)),
-        va.crop.CornerCrop(size=(240, 180)),
-        va.geometric.ElasticTransformation(),
-        va.geometric.GaussianBlur(sigma=1.0),
-        va.flip.HorizontalFlip(),
-        va.temporal.InverseOrder(),
-        va.intensity.InvertColor(),
-        va.intensity.Multiply(),
-        va.intensity.Pepper(),
-        va.geometric.PiecewiseAffineTransform(),
-        va.crop.RandomCrop(size=(240, 180)),
-        va.affine.RandomResize(),
-        va.affine.RandomRotate(degrees=10),
-        va.affine.RandomShear(x=10,y=10),
-        va.affine.RandomTranslate(),
-        va.intensity.Salt(),
-        va.geometric.Superpixel(),
-        va.flip.VerticalFlip()
-    ]
-    return np.random.choice(spatial_augs)
+    If 'num_to_get' > 1 and as_seq, then the augmentations will 
+    be returned as va.group.Sequential. If not as_seq, then it will be returned
+    as a list.
 
-def get_random_temporal_aug():
-    temporal_augs = [
-        va.temporal.InverseOrder(),
-        va.temporal.TemporalBeginCrop(size=10),
-        va.temporal.TemporalCenterCrop(size=10),
-        va.temporal.TemporalElasticTransformation(),
-        va.temporal.TemporalFit(size=10),
-        va.temporal.TemporalRandomCrop(size=10),
-        va.temporal.Upsample()
-    ]
-    return np.random.choice(temporal_augs)
+    Initialization parameters to the augmentation can be passed via
+    'initialize_params'. 'initiialize_params' should a be a dictionary of
+    dictionaries,  D= <k1, < k2,v>>, where k1 is the name of the augmentation,
+    k2 is the parameter name to initialize, and v is the value to initialize.
+    """
+    assert aug_type in ['group','spatial','temporal']
+    group_augs = {
+        k:v[1] for k,v in AugWrapper.get_all_aug().items() if v[0] == aug_type
+    }
+    uninitialized_augs = np.random.choice(list(group_augs.keys()), num_to_get)
+    augs = []
+    for aug in uninitialized_augs:
+        name = group_augs[aug]
+        if name in initialize_params:
+            augs.append(aug(
+                initialize_params
+            ))
+        else:
+            # assumes no initilization parameters required
+            augs.append(aug())
+
+    if len(augs) == 1:
+        return augs[0]
+    else:
+        if as_seq:
+            return va.group.Sequential(augs)
+        else:
+            return augs
 
 def augment_video(video, augs):
     # 'video' should be either a list of images from type of numpy array or PIL images
