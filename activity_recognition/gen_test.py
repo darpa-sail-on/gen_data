@@ -6,6 +6,7 @@ import warnings
 import click
 import glob
 import json
+import math
 #from vidaug import augmentors as va
 #from vid_utils import (
 #    generate_aug,
@@ -146,14 +147,15 @@ def gen_test(known_video_path,
 
     metadata = {
         'protocol' : protocol,
+        'num_total_samples' : num_total_samples,
         'round_size' : round_size,
         'difficulty' : None, # figure out what this should be
         'distribution' : None, # figure out what this should be
-        'n_rounds' : None, # figure out what this should be
+        'n_rounds' : math.ceil(num_total_samples / round_size), # TODO: confirm that this should be ceil
         'representation' : None, # figure out what this should be
-        'threshold' : None, # figure out what this should be
-        'pre_novelty_batches' : red_light_det // round_size, # TODO: double check this
-        'feedback_max_ids' : None, # figure out what this should be
+        'threshold' : 0.5, # TODO: don't hardcode this
+        'pre_novelty_batches' : math.ceil(red_light_det / round_size), # TODO: double check if this should be ceil or floor
+        'feedback_max_ids' : math.ceil(0.1*round_size), # don't hardcode this
         'known_classes' : len(known_classes),
         'novel_classes' : len(unknown_classes),
         'red_light' : red_light, # see TODO comment above
