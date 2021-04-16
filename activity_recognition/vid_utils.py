@@ -3,7 +3,8 @@ from vidaug import augmentors as va
 import torchvision
 import torch
 import numpy as np
-from collections import namedtuple
+from collections import namedtuple, defaultdict
+import json
 
 class AugWrapper():
     AugInfo = namedtuple("AugInfo", "type name")
@@ -55,6 +56,13 @@ class AugWrapper():
             va.temporal.Downsample: AugWrapper.AugInfo('temporal', 'Downsample'),
             va.temporal.Upsample:AugWrapper.AugInfo('temporal','Upsample')
         }
+
+    @staticmethod
+    def print_all_augs():
+        augs_grouped = defaultdict(list)
+        for k,v in AugWrapper.get_all_aug().items():
+            augs_grouped[v.type].append(v.name + ' --> ' + str(k))
+        print(json.dumps(augs_grouped, sort_keys = True, indent = 4))
 
 def load_video(video_path, start_pts = 0, end_pts = None):
     # TODO: add suport for if video_path is directory to images that together
