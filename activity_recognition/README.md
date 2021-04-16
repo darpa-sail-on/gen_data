@@ -5,7 +5,7 @@ There are two parts to the test generation, augmenting videos, and generating th
 ## Video Augmentation
 
 To augment videos, run 
-'''PYTHONPATH=. tinker -c <CONFIG> gen_aug_vid.py'''
+`PYTHONPATH=. tinker -c <CONFIG> gen_aug_vid.py`
 
 CONFIG needs to be a yaml file with the following elements:
 
@@ -25,7 +25,7 @@ To see an example of what the output will look like, check out tellurak:/home/lo
 
 Here are all the possible augmentation names, sorted by type, with the augmentation they represent.
 
-'''
+```
 {
     "group": [
         "OneOf --> <class 'vidaug.augmentors.group.OneOf'>",
@@ -64,7 +64,7 @@ Here are all the possible augmentation names, sorted by type, with the augmentat
         "Upsample --> <class 'vidaug.augmentors.temporal.Upsample'>"
     ]
 }
-'''
+```
 
 See [sample_config.yaml](sample_config.yaml) for an example config
 
@@ -73,11 +73,11 @@ Because of the test below, you shouldn't mix temporal and spatial augmentations 
 ## Generate Test
 
 To generate the tests, run 
-'''python gen_test.py <ARGUMENTS>'''
+`python gen_test.py <ARGUMENTS>`
 
-where the ARGUMENTS are (as specified by 'python gen_test.py --help'
+where the ARGUMENTS are (as specified by `python gen_test.py --help`)
 
-'''
+```
 Options:
   -k, --known_video_path DIRECTORY
                                   Filepath to a folder with folders of videos
@@ -93,7 +93,7 @@ Options:
   --prob_novel_sample FLOAT
   --round_size INTEGER
   --seed INTEGER
-'''
+```
 
 Right now, mixing spatial and temporal augmentations are not supported. Choose one, and specify it in aug_type. 
 
