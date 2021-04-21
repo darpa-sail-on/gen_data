@@ -1,5 +1,6 @@
 tinker-engine>=0.8.0
-videoaug>=0.1
+vidaug>=0.1
 torch==1.7.1
 torchvision==0.8.2
 av>=8.0.2
+click>=7.1.2
