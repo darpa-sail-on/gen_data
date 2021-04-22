@@ -13,12 +13,18 @@ There are two parts to the test generation, augmenting videos, and generating th
 
 2. Install in a virtual environment using
   ```
+    cd gen_data/
     pipenv install
   ```
 
 3. Activate the virtual environment using
   ```
     pipenv shell
+  ```
+
+4. Install the repository
+  ```
+    pip install -e .
   ```
 
 
