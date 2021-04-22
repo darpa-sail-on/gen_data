@@ -1,0 +1,13 @@
+# Byte files/ cache file
+*.pyc
+__pycache__/
+
+# Distribution/ packaging
+build/
+dist/
+sdist/
+*.egg-info/
+
+# Tinker logs and local configs
+*.log
+configs/local*
