@@ -1,4 +1,4 @@
-from vid_utils import get_random_aug, get_aug, generate_aug
+from gen_data.vid_utils import get_random_aug, get_aug, generate_aug
 import tinker.protocol
 from vidaug import augmentors as va
 import os
