@@ -7,12 +7,14 @@ import click
 import glob
 import json
 import math
-#from vidaug import augmentors as va
-#from vid_utils import (
+
+# from vidaug import augmentors as va
+# from vid_utils import (
 #    generate_aug,
 #    get_random_spatial_aug,
 #    get_random_temporal_aug
-#)
+# )
+
 
 def get_vid_dict(video_path, classes, int_mapping):
     """
@@ -29,24 +31,27 @@ def get_vid_dict(video_path, classes, int_mapping):
     video_id_dict = {}
     for c in classes:
         class_id = int_mapping[c]
-        videos = glob.glob(os.path.join(video_path,c,'*'))
+        videos = glob.glob(os.path.join(video_path, c, "*"))
         for v in videos:
             if os.path.isfile(v):
                 video_id_dict[v] = class_id
     return video_id_dict
 
-def gen_test(known_video_path,
-        unknown_video_path,
-        num_total_samples,
-        novelty_timestamp,
-        aug_type,
-        #known_video_classes=None,
-        prob_novel_class=0.5,
-        round_size=1,
-        protocol='OND',
-        #prob_spatial_transform=0.5,
-        #prob_temporal_transform=0.5,
-        seed = None):
+
+def gen_test(
+    known_video_path,
+    unknown_video_path,
+    num_total_samples,
+    novelty_timestamp,
+    aug_type,
+    # known_video_classes=None,
+    prob_novel_class=0.5,
+    round_size=1,
+    protocol="OND",
+    # prob_spatial_transform=0.5,
+    # prob_temporal_transform=0.5,
+    seed=None,
+):
 
     """
     Generate an activity recognition test
@@ -72,15 +77,18 @@ def gen_test(known_video_path,
     np.random.seed(seed=seed)
 
     known_video_classes = sorted(os.listdir(known_video_path))
-    class_str_to_int = {c:i for i,c in enumerate(known_video_classes)}
+    class_str_to_int = {c: i for i, c in enumerate(known_video_classes)}
 
-    known_videos_dict = get_vid_dict(known_video_path, known_video_classes,
-        class_str_to_int)
-    class_str_to_int = {c: i + len(class_str_to_int) for i,c in
-        enumerate(known_video_classes)}
+    known_videos_dict = get_vid_dict(
+        known_video_path, known_video_classes, class_str_to_int
+    )
+    class_str_to_int = {
+        c: i + len(class_str_to_int) for i, c in enumerate(known_video_classes)
+    }
     unknown_video_classes = known_video_classes
-    unknown_videos_dict = get_vid_dict(unknown_video_path, known_video_classes,
-        class_str_to_int)
+    unknown_videos_dict = get_vid_dict(
+        unknown_video_path, known_video_classes, class_str_to_int
+    )
 
     assert novelty_timestamp <= num_total_samples
     # can't asl for more videos than have video samples
@@ -90,41 +98,43 @@ def gen_test(known_video_path,
     unknown_videos = list(unknown_videos_dict.keys())
 
     # contains test info
-    columns = ['vid','novel','detection','activity','spatial','temporal']
-    df = pd.DataFrame(columns = columns)
+    columns = ["vid", "novel", "detection", "activity", "spatial", "temporal"]
+    df = pd.DataFrame(columns=columns)
 
     known_classes, unknown_classes = [], []
     for n in range(0, novelty_timestamp):
         # before novelty_timestamp only sample from known_videos
         vid_id = np.random.choice(len(known_videos))
         vid = known_videos[vid_id]
-        df.loc[len(df.index)] = [
-            vid, 0, 0, known_videos_dict[vid], 0, 0
-        ]
+        df.loc[len(df.index)] = [vid, 0, 0, known_videos_dict[vid], 0, 0]
         if known_videos_dict[vid] not in known_classes:
             known_classes.append(known_videos_dict[vid])
         del known_videos[vid_id]
 
-    if aug_type == 'spatial':
-        is_spatial=1
-        is_temporal=0
-    elif aug_type == 'temporal':
-        is_spatial=0
-        is_temporal=1
+    if aug_type == "spatial":
+        is_spatial = 1
+        is_temporal = 0
+    elif aug_type == "temporal":
+        is_spatial = 0
+        is_temporal = 1
     else:
         raise NotImplementedError()
 
-
     red_light, red_light_det = None, -1
-    for n in range(novelty_timestamp, num_total_samples): 
+    for n in range(novelty_timestamp, num_total_samples):
         # Note: using same random seed for multiple different types of random
         # sampling. This may cause issues downstream
-        sample_novel_class = (prob_novel_class >= np.random.random_sample())
-        if sample_novel_class: 
+        sample_novel_class = prob_novel_class >= np.random.random_sample()
+        if sample_novel_class:
             vid_id = np.random.choice(len(unknown_videos))
             vid = unknown_videos[vid_id]
             df.loc[len(df.index)] = [
-                vid, 1, 1, unknown_videos_dict[vid], is_spatial, is_temporal
+                vid,
+                1,
+                1,
+                unknown_videos_dict[vid],
+                is_spatial,
+                is_temporal,
             ]
             # TODO: decide what to do with red_light when at novelty_timestamp
             # but sampling from known
@@ -135,9 +145,7 @@ def gen_test(known_video_path,
         else:
             vid_id = np.random.choice(len(known_videos))
             vid = known_videos[vid_id]
-            df.loc[len(df.index)] = [
-                vid, 0, 1, known_videos_dict[vid], 0, 0
-            ]
+            df.loc[len(df.index)] = [vid, 0, 1, known_videos_dict[vid], 0, 0]
             if red_light is None:
                 red_light = vid
                 red_light_det = n
@@ -146,126 +154,108 @@ def gen_test(known_video_path,
             del known_videos[vid_id]
 
     metadata = {
-        'protocol' : protocol,
-        'num_total_samples' : num_total_samples,
-        'round_size' : round_size,
-        'difficulty' : None, # figure out what this should be
-        'distribution' : None, # figure out what this should be
-        'n_rounds' : math.ceil(num_total_samples / round_size), # TODO: confirm that this should be ceil
-        'representation' : None, # figure out what this should be
-        'threshold' : 0.5, # TODO: don't hardcode this
-        'pre_novelty_batches' : math.ceil(red_light_det / round_size), # TODO: double check if this should be ceil or floor
-        'feedback_max_ids' : math.ceil(0.1*round_size), # don't hardcode this
-        'known_classes' : len(known_classes),
-        'novel_classes' : len(unknown_classes),
-        'red_light' : red_light, # see TODO comment above
-        'detection' : red_light_det,
-        'degree': 1, # shouldn't be hardcoded
-        'prob_novel' : prob_novel_class, # check not  'prop_novel'
-        'novel_type' : aug_type,
-        'seed' : seed,
-        "actual_novel_activities": list(class_str_to_int.keys()), # maybe wrong
-        'max_novel_classes' : len(class_str_to_int), # not sure what this means, likely wrong value
+        "protocol": protocol,
+        "num_total_samples": num_total_samples,
+        "round_size": round_size,
+        "difficulty": None,  # figure out what this should be
+        "distribution": None,  # figure out what this should be
+        "n_rounds": math.ceil(
+            num_total_samples / round_size
+        ),  # TODO: confirm that this should be ceil
+        "representation": None,  # figure out what this should be
+        "threshold": 0.5,  # TODO: don't hardcode this
+        "pre_novelty_batches": math.ceil(
+            red_light_det / round_size
+        ),  # TODO: double check if this should be ceil or floor
+        "feedback_max_ids": math.ceil(0.1 * round_size),  # don't hardcode this
+        "known_classes": len(known_classes),
+        "novel_classes": len(unknown_classes),
+        "red_light": red_light,  # see TODO comment above
+        "detection": red_light_det,
+        "degree": 1,  # shouldn't be hardcoded
+        "prob_novel": prob_novel_class,  # check not  'prop_novel'
+        "novel_type": aug_type,
+        "seed": seed,
+        "actual_novel_activities": list(class_str_to_int.keys()),  # maybe wrong
+        "max_novel_classes": len(
+            class_str_to_int
+        ),  # not sure what this means, likely wrong value
     }
-    
+
     return df, metadata
+
 
 @click.command()
 @click.option(
-    '--known_video_path',
-    '-k',
-    'known_video_path',
+    "--known_video_path",
+    "-k",
+    "known_video_path",
     default=None,
-    help='Filepath to a folder with folders of videos',
-    type=click.Path(
-        exists=True,
-        file_okay=False,
-        dir_okay=True
-    )
+    help="Filepath to a folder with folders of videos",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.option(
-    '--unknown_video_path',
-    '-u',
-    'unknown_video_path',
+    "--unknown_video_path",
+    "-u",
+    "unknown_video_path",
     default=None,
-    help='Filepath to a folder with folders of videos',
-    type=click.Path(
-        exists=True,
-        file_okay=False,
-        dir_okay=True
-    )
+    help="Filepath to a folder with folders of videos",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
 )
 @click.option(
-    '--output_test_dir',
-    '-o',
-    'output_test_dir',
+    "--output_test_dir",
+    "-o",
+    "output_test_dir",
     default=None,
-    help='Directyor where output test files should be written',
-    type=click.Path(
-        exists=False,
-        file_okay=False,
-        dir_okay=True
-    )
+    help="Directyor where output test files should be written",
+    type=click.Path(exists=False, file_okay=False, dir_okay=True),
 )
-@click.option(
-    '--num_total_samples',
-    default=10,
-    type=int
-)
-@click.option(
-    '--novelty_timestamp',
-    default=5,
-    type=int
-)
-@click.option(
-    '--aug_type',
-    default='spatial',
-    type=str
-)
-@click.option(
-    '--prob_novel_sample',
-    default=0.5,
-    type=float
-)
-@click.option(
-    '--round_size',
-    default=1,
-    type=int
-)
-@click.option(
-    '--seed',
-    default=None,
-    type=int
-)
-def main(known_video_path, unknown_video_path, 
-        output_test_dir, num_total_samples, novelty_timestamp, 
-        aug_type, prob_novel_sample, round_size, seed):
+@click.option("--num_total_samples", default=10, type=int)
+@click.option("--novelty_timestamp", default=5, type=int)
+@click.option("--aug_type", default="spatial", type=str)
+@click.option("--prob_novel_sample", default=0.5, type=float)
+@click.option("--round_size", default=1, type=int)
+@click.option("--seed", default=None, type=int)
+def main(
+    known_video_path,
+    unknown_video_path,
+    output_test_dir,
+    num_total_samples,
+    novelty_timestamp,
+    aug_type,
+    prob_novel_sample,
+    round_size,
+    seed,
+):
     # TODO: don't hardocde these
-    protocol = 'OND'
-    group_id = 'TESTGROUP'
-    run_id = 'TESTRUN'
+    protocol = "OND"
+    group_id = "TESTGROUP"
+    run_id = "TESTRUN"
     seed_id = str(seed)
-    
-    df, metadata = gen_test(known_video_path, unknown_video_path, 
-        num_total_samples=num_total_samples, 
-        novelty_timestamp=novelty_timestamp, 
-        aug_type=aug_type, 
-        prob_novel_class=prob_novel_sample, 
+
+    df, metadata = gen_test(
+        known_video_path,
+        unknown_video_path,
+        num_total_samples=num_total_samples,
+        novelty_timestamp=novelty_timestamp,
+        aug_type=aug_type,
+        prob_novel_class=prob_novel_sample,
         round_size=round_size,
         protocol=protocol,
-        seed = seed)    
-   
+        seed=seed,
+    )
 
-    output_test_base = os.path.join(output_test_dir,
-        '{}.{}.{}.{}'.format(
-            protocol, group_id, run_id, seed_id))
+    output_test_base = os.path.join(
+        output_test_dir, "{}.{}.{}.{}".format(protocol, group_id, run_id, seed_id)
+    )
 
     if not os.path.exists(output_test_dir):
         os.makedirs(output_test_dir)
-    df.to_csv(output_test_base + '_single_df.csv', index = False)
-    with open(output_test_base + '_metadata.json', 'w') as f:
-        json.dump(metadata, f, sort_keys = True, indent = 4)
+    df.to_csv(output_test_base + "_single_df.csv", index=False)
+    with open(output_test_base + "_metadata.json", "w") as f:
+        json.dump(metadata, f, sort_keys=True, indent=4)
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())  # pragma: no cover
