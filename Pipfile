@@ -1,0 +1,25 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+black = "==19.10b0"
+
+[packages]
+torch = "==1.7.1"
+torchvision = "==0.8.2"
+av = ">=8.0.2"
+click = ">=7.1.2"
+pandas = ">=1.2.4"
+tinker-engine = {editable = true, path = "./../tinker-engine"}
+vidaug = {editable = true, path = "./../vidaug"}
+
+[requires]
+python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
+
+[scripts]
+format = "black ."
