@@ -2,10 +2,32 @@
 
 There are two parts to the test generation, augmenting videos, and generating the test
 
+## Installation
+
+1. Clone the repository along with dependencies using in the working directory using
+  ```
+    git clone git@github.com:darpa-sail-on/videoaug.git
+    git clone git@github.com:tinker-engine/tinker-engine.git
+    git clone git@github.com:darpa-sail-on/gen_data.git
+  ```
+
+2. Install in a virtual environment using
+  ```
+    pipenv install
+  ```
+
+3. Activate the virtual environment using
+  ```
+    pipenv shell
+  ```
+
+
 ## Video Augmentation
 
-To augment videos, run 
-`PYTHONPATH=. tinker -c <CONFIG> gen_aug_vid.py`
+To augment videos, run
+  ```
+    tinker -c <CONFIG> gen_data/gen_aug_vid.py
+  ```
 
 CONFIG needs to be a yaml file with the following elements:
 
@@ -13,8 +35,8 @@ CONFIG needs to be a yaml file with the following elements:
 is the class name, and each child folder contains videos in '.avi' format.
 To see an example, check out tellurak:/home/local/KHQ/benjamin.pikus/code/SAIL-ON/gen_data/activity_recognition/test_vid_dataset/original
 * 'dst_path' --> path to folder where augmented videos will be output. At output, this will
-look exactly like the elements in 'src_path', where each class iscopied over, and each video 
-is augmented and put in the class folder (with the same exact name). 
+look exactly like the elements in 'src_path', where each class is copied over, and each video
+is augmented and put in the class folder (with the same exact name).
 To see an example of what the output will look like, check out tellurak:/home/local/KHQ/benjamin.pikus/code/SAIL-ON/gen_data/activity_recognition/test_vid_dataset/augmented
 * 'augmentation --> this specifies the augmentations to do on each video and the paramaters to pass. This will be a list of dictionaries, with the augmentations carried out in the order of the list, where each dictionary has
   * key = augmentation name (see below for possible augmentation names)
@@ -66,13 +88,13 @@ Here are all the possible augmentation names, sorted by type, with the augmentat
 }
 ```
 
-See [sample_config.yaml](sample_config.yaml) for an example config
+See [sample_config.yaml](configs/sample_config.yaml) for an example config
 
 Because of the test below, you shouldn't mix temporal and spatial augmentations (so just choose one to do).
 
 ## Generate Test
 
-To generate the tests, run 
+To generate the tests, run
 `python gen_test.py <ARGUMENTS>`
 
 where the ARGUMENTS are (as specified by `python gen_test.py --help`)
@@ -95,7 +117,7 @@ Options:
   --seed INTEGER
 ```
 
-Right now, mixing spatial and temporal augmentations are not supported. Choose one, and specify it in aug_type. 
+Right now, mixing spatial and temporal augmentations are not supported. Choose one, and specify it in aug_type.
 
 This will output a datafrane and a metadata json in output_test_dir.
 
