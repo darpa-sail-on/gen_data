@@ -19,6 +19,7 @@ setup(
     description="""Scripts for generating tests using vid aug""",
     name="gen_data",
     setup_requires=setup_requirements,
+    install_requires=requirements,
     packages=find_packages(),
     url="https://github.com/darpa-sail-on/gen_data",
     zip_safe=False,
