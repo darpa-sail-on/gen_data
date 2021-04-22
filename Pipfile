@@ -11,6 +11,7 @@ torch = "==1.7.1"
 torchvision = "==0.8.2"
 av = ">=8.0.2"
 click = ">=7.1.2"
+pandas = ">=1.2.4"
 tinker-engine = {editable = true, path = "./../tinker-engine"}
 vidaug = {editable = true, path = "./../vidaug"}
 
