@@ -1,0 +1,26 @@
+{
+    "actual_novel_activities": [
+        93,
+        90,
+        91
+    ],
+    "degree": 1,
+    "detection": 5,
+    "difficulty": null,
+    "distribution": null,
+    "feedback_max_ids": 1,
+    "known_classes": 7,
+    "max_novel_classes": 7,
+    "n_rounds": 10,
+    "novel_classes": 3,
+    "novel_type": "class",
+    "num_total_samples": 10,
+    "pre_novelty_batches": 5,
+    "prob_novel": 0.5,
+    "protocol": "OND",
+    "red_light": "Shotput/v_Shotput_g20_c04.avi",
+    "representation": null,
+    "round_size": 1,
+    "seed": 0,
+    "threshold": 0.5
+}

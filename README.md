@@ -146,9 +146,9 @@ This will output `num_groups * nums_runs` dataframes and metadata json files in 
 
 Here is an example command
 ```
-python gen_data/gen_test.py -k /data/datasets/TA1-activity-recognition-training/TA2_splits/ucf101_train_knowns_revised.csv -u /data/datasets/TA1-activity-recognition-training/TA2_splits/ucf101_train_unknowns_revised.csv  --num_groups 2 --num_runs 2 --novelty_timestamp 0 -o result/test_run_numgroups2_numruns2
+python gen_data/gen_test.py -k /data/datasets/TA1-activity-recognition-training/TA2_splits/ucf101_train_knowns_revised.csv -u /data/datasets/TA1-activity-recognition-training/TA2_splits/ucf101_train_unknowns_revised.csv  --num_groups 2 --num_runs 2 --novelty_timestamp 5 -o result/test_run_numgroups2_numruns2
 ```
 
-The outputs of this run can be seen here: [test_results](result/test_run_numgroups2_numruns2)
+The outputs of this run can be seen here: [test_results](result/test_run_numgroups2_numruns2_novelty5)
 
 If using the augmentations from above, known_video_csv should point to the same csv as src_path in the dataset generation, and unknown_video_csv should point to dst_path.

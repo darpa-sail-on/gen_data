@@ -1,0 +1,26 @@
+{
+    "actual_novel_activities": [
+        88,
+        90,
+        92
+    ],
+    "degree": 1,
+    "detection": 6,
+    "difficulty": null,
+    "distribution": null,
+    "feedback_max_ids": 1,
+    "known_classes": 6,
+    "max_novel_classes": 7,
+    "n_rounds": 10,
+    "novel_classes": 3,
+    "novel_type": "class",
+    "num_total_samples": 10,
+    "pre_novelty_batches": 6,
+    "prob_novel": 0.5,
+    "protocol": "OND",
+    "red_light": "CricketShot/v_CricketShot_g05_c02.avi",
+    "representation": null,
+    "round_size": 1,
+    "seed": 0,
+    "threshold": 0.5
+}
