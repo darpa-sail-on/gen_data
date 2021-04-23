@@ -142,7 +142,7 @@ Options:
 
 Right now, mixing class, spatial or temporal augmentations are not supported. Choose one, and specify it in aug_type.
 
-This will output num_groups * nums_runs datafrane and a metadata json in output_test_dir.
+This will output `num_groups * nums_runs` dataframes and metadata json files in output_test_dir.
 
 Here is an example command
 ```
