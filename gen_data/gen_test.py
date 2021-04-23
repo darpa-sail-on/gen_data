@@ -280,7 +280,7 @@ def create_individual_test(known_videos, unknown_videos,
     return df, metadata
 
 
-@click.command()
+@click.command(help="Generates multiple SAIL-on test runs.")
 @click.option(
     "--known_video_csv",
     "-k",
@@ -297,11 +297,17 @@ def create_individual_test(known_videos, unknown_videos,
     help="Filepath to a csv where each line is (video_path, class_id)",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
 )
-@click.option("--num_groups", default=1, type=int)
-@click.option("--num_runs", default=1, type=int)
-@click.option("--num_samples_per_run", default=10, type=int)
-@click.option("--novelty_timestamp", default=5, type=int)
-@click.option("--aug_type", default="spatial", type=str)
+@click.option("--num_groups", default=1, type=int,
+    help = "# of groups to generate tests for")
+@click.option("--num_runs", default=1, type=int,
+    help = "# of runs for each group")
+@click.option("--num_samples_per_run", default=10, type=int,
+    help="# of total samples for each run")
+@click.option("--novelty_timestamp", default=5, type=int,
+    help="at which timestep to introduce novelty")
+@click.option("--aug_type", default="class", 
+    type=click.Choice(["class","spatial","temporal"]),
+    help="Which type of novelty is present in 'unknown_video_csv'")
 @click.option(
     "--output_test_dir",
     "-o",
@@ -310,10 +316,16 @@ def create_individual_test(known_videos, unknown_videos,
     help="Directory where output test files should be written",
     type=click.Path(exists=False, file_okay=False, dir_okay=True),
 )
-@click.option("--prob_novel_sample", default=0.5, type=float)
-@click.option("--round_size", default=1, type=int)
-@click.option("--protocol", default='OND', type=str)
-@click.option("--seed", default=0, type=int)
+@click.option("--prob_novel_sample", default=0.5, type=float,
+    help="probability of novel sample being introduced " +
+        "after 'novelty_timestamp'")
+@click.option("--round_size", default=1, type=int,
+    help="Round (batch) size to populate metadata with")
+@click.option("--protocol", default='OND', 
+    type=click.Choice(["OND","CONDA"]),
+    help="Which SAIL-ON protocol to populate metadata with")
+@click.option("--seed", default=0, type=int,
+    help="What to seed random number generator with")
 def main(
     known_video_csv,
     unknown_video_csv,

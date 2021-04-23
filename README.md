@@ -106,25 +106,49 @@ To generate the tests, run
 where the ARGUMENTS are (as specified by `python gen_test.py --help`)
 
 ```
+Usage: gen_test.py [OPTIONS]
+
+  Generates multiple SAIL-on test runs.
+
 Options:
-  -k, --known_video_path DIRECTORY
-                                  Filepath to a folder with folders of videos
-  -u, --unknown_video_path DIRECTORY
-                                  Filepath to a folder with folders of videos
+  -k, --known_video_csv FILE      Filepath to a csv where each line is
+                                  (video_path, class_id)
+
+  -u, --unknown_video_csv FILE    Filepath to a csv where each line is
+                                  (video_path, class_id)
+
+  --num_groups INTEGER            # of groups to generate tests for
+  --num_runs INTEGER              # of runs for each group
+  --num_samples_per_run INTEGER   # of total samples for each run
+  --novelty_timestamp INTEGER     at which timestep to introduce novelty
+  --aug_type [class|spatial|temporal]
+                                  Which type of novelty is present in
+                                  'unknown_video_csv'
+
   -o, --output_test_dir DIRECTORY
-                                  Directyor where output test files should be
+                                  Directory where output test files should be
                                   written
 
-  --num_total_samples INTEGER
-  --novelty_timestamp INTEGER
-  --aug_type TEXT
-  --prob_novel_sample FLOAT
-  --round_size INTEGER
-  --seed INTEGER
+  --prob_novel_sample FLOAT       probability of novel sample being introduced
+                                  after 'novelty_timestamp'
+
+  --round_size INTEGER            Round (batch) size to populate metadata with
+  --protocol [OND|CONDA]          Which SAIL-ON protocol to populate metadata
+                                  with
+
+  --seed INTEGER                  What to seed random number generator with
+  --help                          Show this message and exit.
 ```
 
-Right now, mixing spatial and temporal augmentations are not supported. Choose one, and specify it in aug_type.
+Right now, mixing class, spatial or temporal augmentations are not supported. Choose one, and specify it in aug_type.
 
-This will output a datafrane and a metadata json in output_test_dir.
+This will output num_groups * nums_runs datafrane and a metadata json in output_test_dir.
 
-known_video_path should point to the same folder as src_path in the dataset generation, and unknown_vdieo_path should point to dst_path.
+Here is an example command
+```
+python gen_data/gen_test.py -k /data/datasets/TA1-activity-recognition-training/TA2_splits/ucf101_train_knowns_revised.csv -u /data/datasets/TA1-activity-recognition-training/TA2_splits/ucf101_train_unknowns_revised.csv  --num_groups 2 --num_runs 2 --novelty_timestamp 0 -o result/test_run_numgroups2_numruns2
+```
+
+The outputs of this run can be seen here: [test_results](results/test_run_numgroups2_numruns2)
+
+If using the augmentations from above, known_video_csv should point to the same csv as src_path in the dataset generation, and unknown_video_csv should point to dst_path.

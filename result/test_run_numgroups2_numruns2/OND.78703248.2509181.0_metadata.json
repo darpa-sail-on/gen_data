@@ -1,0 +1,27 @@
+{
+    "actual_novel_activities": [
+        90,
+        92,
+        88,
+        93
+    ],
+    "degree": 1,
+    "detection": 0,
+    "difficulty": null,
+    "distribution": null,
+    "feedback_max_ids": 1,
+    "known_classes": 4,
+    "max_novel_classes": 7,
+    "n_rounds": 10,
+    "novel_classes": 4,
+    "novel_type": "class",
+    "num_total_samples": 10,
+    "pre_novelty_batches": 0,
+    "prob_novel": 0.5,
+    "protocol": "OND",
+    "red_light": "HorseRiding/v_HorseRiding_g03_c03.avi",
+    "representation": null,
+    "round_size": 1,
+    "seed": 0,
+    "threshold": 0.5
+}
