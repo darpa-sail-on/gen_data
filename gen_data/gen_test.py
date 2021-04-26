@@ -62,29 +62,21 @@ def sample_vids(videos, num_times_to_sample, num_samples):
     if len(videos) < (num_times_to_sample * num_samples):
         warnings.warn('Sampling more samples than have in video, will '+ 
             'have repeats')
-    
-    np.random.shuffle(videos)
-    sampled_videos = []
-    i = 0
-    num_samples = int(num_samples)
-    while len(sampled_videos) < (num_times_to_sample * num_samples):
-        if ((i+1) * num_samples) > len(videos):
-            # need to reshuffle and reset counter
-            remaining_videos = videos[i*num_samples:]
-            to_be_shuffled_videos = [x for x in videos if x not in
-                remaining_videos]
-            np.random.shuffle(to_be_shuffled_videos)
-            videos = remaining_videos + to_be_shuffled_videos
-            i = 0
-        sampled_videos.extend(videos[i*num_samples: (i+1)*num_samples])
-        i += 1
 
-    # reshape sampled videos to be of proper shape
-    sampled_videos = np.reshape(np.array(sampled_videos),
-        (num_times_to_sample, num_samples))
-
-    assert sampled_videos.shape == (num_times_to_sample, num_samples)
-    return sampled_videos
+    sampled_vids = []
+    np_videos = np.array(videos)
+    rng = np.random.default_rng()
+    current_sample_idx = 0
+    while current_sample_idx < num_times_to_sample:
+        rng.shuffle(np_videos)
+        samples = rng.choice(np_videos, size=num_samples, replace=False)
+        sampled_vids.append(samples)
+        if current_sample_idx >= num_times_to_sample:
+            break
+        current_sample_idx += 1
+    sampled_vids = np.array(sampled_vids)
+    assert sampled_vids.shape == (num_times_to_sample, num_samples)
+    return sampled_vids
 
 def gen_test(
     known_video_csv,
