@@ -3,6 +3,7 @@ from vidaug import augmentors as va
 import torchvision
 import torch
 import numpy as np
+import os
 from collections import namedtuple, defaultdict
 import json
 
@@ -13,7 +14,7 @@ class AugWrapper:
     def get_all_aug():
         """
         Returns a dictionary where the key is the augmentation, and the value is
-        a tuple, where the first element is 
+        a tuple, where the first element is
         either "spatial", "temporal", or "group" depending on what types of
         augmentation it is. The second element is the string name for the
         augmentation.
@@ -25,6 +26,7 @@ class AugWrapper:
             va.group.Sequential: AugWrapper.AugInfo("group", "Sequential"),
             va.group.SomeOf: AugWrapper.AugInfo("group", "SomeOf"),
             va.group.Sometimes: AugWrapper.AugInfo("group", "Sometimes"),
+            # Spatial Transforms
             va.intensity.Add: AugWrapper.AugInfo("spatial", "Add"),
             va.crop.CenterCrop: AugWrapper.AugInfo("spatial", "CenterCrop"),
             va.crop.CornerCrop: AugWrapper.AugInfo("spatial", "CornerCrop"),
@@ -47,6 +49,7 @@ class AugWrapper:
             va.intensity.Salt: AugWrapper.AugInfo("spatial", "Salt"),
             va.geometric.Superpixel: AugWrapper.AugInfo("spatial", "Superpixel"),
             va.flip.VerticalFlip: AugWrapper.AugInfo("spatial", "VerticalFlip"),
+            # Temporal Transforms
             va.temporal.InverseOrder: AugWrapper.AugInfo("temporal", "InverseOrder"),
             va.temporal.TemporalBeginCrop: AugWrapper.AugInfo(
                 "temporal", "TemporalBeginCrop"
@@ -71,6 +74,13 @@ class AugWrapper:
         for k, v in AugWrapper.get_all_aug().items():
             augs_grouped[v.type].append(v.name + " --> " + str(k))
         print(json.dumps(augs_grouped, sort_keys=True, indent=4))
+
+    @staticmethod
+    def get_hash_for_augs():
+        hash_dict = {}
+        for k, v in AugWrapper.get_all_aug().items():
+            hash_dict[v.name] = hash(k)
+        return hash_dict
 
 
 def load_video(video_path, start_pts=0, end_pts=None):
@@ -101,7 +111,7 @@ def load_video(video_path, start_pts=0, end_pts=None):
 def get_aug(aug_name, aug_type=None, initialize_params={}):
     """
     Return 'augmentations with name 'aug_name' and optionally of type
-    'aug_type' if specified, where aug_type is either group, 
+    'aug_type' if specified, where aug_type is either group,
     spatial, or temporal.
 
     If multiple augmentations have the same name, then may give unexpected
@@ -110,8 +120,8 @@ def get_aug(aug_name, aug_type=None, initialize_params={}):
     If augmentation not found, will raise ValueError.
 
     Initialization parameters to the augmentation can be passed via
-    'initialize_params'. 'initiialize_params' should a be a dictionary, 
-    where the keys are the parameter names to initialize, 
+    'initialize_params'. 'initiialize_params' should a be a dictionary,
+    where the keys are the parameter names to initialize,
     and the values are the values to initialize with.
     """
     assert aug_type in ["group", "spatial", "temporal", None]
@@ -166,7 +176,7 @@ def get_random_aug(aug_type, num_to_get=1, initialize_params={}, as_seq=False):
 def augment_video(video, augs):
     # 'video' should be either a list of images from type of numpy array or PIL images
     video_aug = augs(video)
-    return video_aug
+    return video_aug, augs.hash
 
 
 def save_video(video, video_path, fps=25):  #
@@ -176,10 +186,15 @@ def save_video(video, video_path, fps=25):  #
     torchvision.io.write_video(filename=video_path, video_array=video, fps=fps)
 
 
-def generate_aug(video_fpath, augs, video_write_path):
+def generate_aug(source_dir, augmented_dir, video_name, augs):
+    video_fpath = os.path.join(source_dir, video_name)
     video, fps = load_video(video_fpath)
-    aug_video = augment_video(video, augs)
+    aug_video, aug_hash = augment_video(video, augs)
     # TODO: make sure fps value is compatible with torchvision, or better yet,
     # stop using torchvision.io. Currently, with a temporal transform, fps will
     # be wrong.
+    if aug_hash is not None:
+        name, ext = os.path.splitext(video_name)
+        video_name = f"{name}_hash_{aug_hash}{ext}"
+    video_write_path = os.path.join(augmented_dir, video_name)
     save_video(aug_video, video_write_path, fps=fps)
