@@ -109,7 +109,9 @@ def gen_test(
         unknown_video_csv (str): path to a csv file, where each line is a video
             sample from a unknown class and its class id
         num_samples_per_run, (int): number of samples for this test
-        novelty_timestamp (int): at which point to introduce novelty
+        novelty_timestamp (str): An interval where novelty is introduced with
+            3 choices: early, in_middle and late. This divides the time
+            when novelty is introduced in 1/3 intervals
         known_video_classes ([str]): list of strings that has the names
             of the known classes. Any class in a folder in 'video_path'
             that is not in known_video_classes is assumed to be novel.
@@ -126,23 +128,27 @@ def gen_test(
     np.random.seed(seed=seed)
     known_videos_dict = read_csv(known_video_csv)
     unknown_videos_dict = read_csv(unknown_video_csv)
-
-    assert novelty_timestamp <= num_samples_per_run
-    # can't asl for more videos than have video samples
-    assert novelty_timestamp <= len(known_videos_dict)
-    
+    upper_bound_timestamp = min(num_samples_per_run, len(known_videos_dict))
+    if novelty_timestamp == "early":
+        random_timestamp = np.random.randint(0, upper_bound_timestamp//3)
+    elif novelty_timestamp == "in_middle":
+        random_timestamp = np.random.randint(upper_bound_timestamp//3,
+                                            (2*upper_bound_timestamp)//3)
+    else:
+        random_timestamp = np.random.randint((2*upper_bound_timestamp)//3,
+                                             upper_bound_timestamp)
     known_videos = list(known_videos_dict.keys())
     unknown_videos = list(unknown_videos_dict.keys())
-    
+
     known_video_sampling = sample_vids(known_videos,
         num_groups,
-        novelty_timestamp + 
-            math.floor((num_samples_per_run - novelty_timestamp) 
+        random_timestamp +
+            math.floor((num_samples_per_run - random_timestamp) 
             * (1-prob_novel_class)))
 
     unknown_video_sampling = sample_vids(unknown_videos,
         num_groups,
-        math.ceil((num_samples_per_run - novelty_timestamp)
+        math.ceil((num_samples_per_run - random_timestamp)
             * prob_novel_class))
     
     for nr in range(num_runs):
@@ -151,7 +157,7 @@ def gen_test(
                 known_video_sampling[ng], 
                 unknown_video_sampling[ng],
                 known_videos_dict, unknown_videos_dict, aug_type,
-                novelty_timestamp, num_samples_per_run, round_size, 
+                random_timestamp, num_samples_per_run, round_size, 
                 prob_novel_class, seed, protocol)
 
             s = (str(sorted(known_video_sampling[ng])) + 
@@ -164,7 +170,6 @@ def gen_test(
             run_id = int(hashlib.sha256(s.encode('utf-8')).hexdigest()
                 , 16) % 10**8  # make the hash 8 digits
             # this could result in some collisions
-
             output_test_base = os.path.join(
                 output_test_dir, "{}.{}.{}.{}".format(protocol, group_id,
                     run_id, str(seed))
@@ -303,9 +308,9 @@ def create_individual_test(known_videos, unknown_videos,
     help = "# of runs for each group")
 @click.option("--num_samples_per_run", default=10, type=int,
     help="# of total samples for each run")
-@click.option("--novelty_timestamp", default=5, type=int,
-    help="at which timestep to introduce novelty")
-@click.option("--aug_type", default="class", 
+@click.option("--novelty_timestamp", type=click.Choice(["early", "in_middle", "late"]),
+              help="at which timestep to introduce novelty")
+@click.option("--aug_type", default="class",
     type=click.Choice(["class","spatial","temporal"]),
     help="Which type of novelty is present in 'unknown_video_csv'")
 @click.option(
