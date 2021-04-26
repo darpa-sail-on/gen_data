@@ -9,6 +9,7 @@ import json
 import math
 import warnings
 import copy
+from tqdm.auto import trange
 import hashlib
 from collections import OrderedDict
 # from vidaug import augmentors as va
@@ -142,9 +143,8 @@ def gen_test(
         num_groups,
         math.ceil((num_samples_per_run - random_timestamp)
             * prob_novel_class))
-    
-    for nr in range(num_runs):
-        for ng in range(num_groups):
+    for nr in trange(num_runs, desc="Runs"):
+        for ng in trange(num_groups, desc="Groups"):
             df, metadata = create_individual_test(
                 known_video_sampling[ng], 
                 unknown_video_sampling[ng],
