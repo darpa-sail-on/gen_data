@@ -127,7 +127,7 @@ def gen_test(
     np.random.seed(seed=seed)
     known_videos_dict = read_csv(known_video_csv)
     unknown_videos_dict = read_csv(unknown_video_csv)
-    assert len(known_videos_dict) > num_samples_per_run
+    assert len(known_videos_dict) >= num_samples_per_run
     upper_bound_timestamp = min(num_samples_per_run, len(known_videos_dict))
     if novelty_timestamp == "early":
         random_timestamp = np.random.randint(0, upper_bound_timestamp//3)
