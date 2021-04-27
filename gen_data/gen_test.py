@@ -69,7 +69,6 @@ def sample_vids(videos, num_times_to_sample, num_samples, seed):
     rng = np.random.default_rng(seed)
     current_sample_idx = 0
     while current_sample_idx < num_times_to_sample:
-        rng.shuffle(np_videos)
         samples = rng.choice(np_videos, size=num_samples, replace=False)
         sampled_vids.append(samples)
         if current_sample_idx >= num_times_to_sample:
