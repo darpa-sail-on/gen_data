@@ -5,3 +5,4 @@ torchvision==0.8.2
 av>=8.0.2
 click>=7.1.2
 pandas>=1.2.4
+tqdm>=4.60.0
