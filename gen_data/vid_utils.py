@@ -6,7 +6,7 @@ import numpy as np
 import os
 from collections import namedtuple, defaultdict
 import json
-
+import hashlib
 
 class AugWrapper:
     AugInfo = namedtuple("AugInfo", "type name")
@@ -79,9 +79,8 @@ class AugWrapper:
     def get_hash_for_augs():
         hash_dict = {}
         for k, v in AugWrapper.get_all_aug().items():
-            hash_dict[v.name] = hash(k)
+            hash_dict[v.name] = hashlib.sha256((v.type + v.name).encode('utf-8')).hexdigest()
         return hash_dict
-
 
 def load_video(video_path, start_pts=0, end_pts=None):
     # TODO: add suport for if video_path is directory to images that together
@@ -176,7 +175,7 @@ def get_random_aug(aug_type, num_to_get=1, initialize_params={}, as_seq=False):
 def augment_video(video, augs):
     # 'video' should be either a list of images from type of numpy array or PIL images
     video_aug = augs(video)
-    return video_aug, augs.hash
+    return video_aug, hashlib.sha256(augs.hash.encode('utf-8')).hexdigest()
 
 
 def save_video(video, video_path, fps=25):  #
