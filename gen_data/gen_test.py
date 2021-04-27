@@ -52,7 +52,7 @@ def read_csv(csv_path):
         return_dict[row[0]] = int(row[1])
     return return_dict
 
-def sample_vids(videos, num_times_to_sample, num_samples):
+def sample_vids(videos, num_times_to_sample, num_samples, seed):
     """
     Sample from a list randomly, without replacement, 'num_times_to_sample'
     times. Returns a numpy array of shape (num_times_to_sample, num_samples)
@@ -66,7 +66,7 @@ def sample_vids(videos, num_times_to_sample, num_samples):
 
     sampled_vids = []
     np_videos = np.array(videos)
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed)
     current_sample_idx = 0
     while current_sample_idx < num_times_to_sample:
         rng.shuffle(np_videos)
@@ -137,12 +137,14 @@ def gen_test(
         num_groups,
         random_timestamp +
             math.floor((num_samples_per_run - random_timestamp) 
-            * (1-prob_novel_class)))
+            * (1-prob_novel_class)),
+        seed)
 
     unknown_video_sampling = sample_vids(unknown_videos,
         num_groups,
         math.ceil((num_samples_per_run - random_timestamp)
-            * prob_novel_class))
+            * prob_novel_class),
+        seed)
     for nr in trange(num_runs, desc="Runs"):
         for ng in trange(num_groups, desc="Groups"):
             df, metadata = create_individual_test(
