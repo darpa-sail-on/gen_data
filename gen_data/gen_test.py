@@ -66,11 +66,18 @@ def sample_vids(videos, num_times_to_sample, num_samples, seed):
 
     sampled_vids = []
     np_videos = np.array(videos)
+    video_idx = np.array(range(len(np_videos)))
     rng = np.random.default_rng(seed)
     current_sample_idx = 0
     while current_sample_idx < num_times_to_sample:
-        samples = rng.choice(np_videos, size=num_samples, replace=False)
-        sampled_vids.append(samples)
+        try:
+            sample_idx = rng.choice(video_idx, size=num_samples, replace=False)
+            video_idx = np.setdiff1d(video_idx, sample_idx)
+        except ValueError:
+            # Recreate numpy array for videos for resampling
+            video_idx = np.array(range(len(np_videos)))
+            continue
+        sampled_vids.append(np_videos[sample_idx])
         if current_sample_idx >= num_times_to_sample:
             break
         current_sample_idx += 1
