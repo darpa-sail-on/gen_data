@@ -242,7 +242,6 @@ def create_individual_test(known_videos, unknown_videos,
             if red_light is None:
                 red_light = vid
                 red_light_det = n
-
         df.loc[len(df.index)] = [
             vid,
             is_novel,
@@ -253,6 +252,11 @@ def create_individual_test(known_videos, unknown_videos,
         ]
 
         del combine_known_unknown[vid]
+
+    # Make all unknown activities single class
+    all_act = df["activity"]
+    all_act[all_act>len(known_classes)] = len(known_classes)
+    df["activity"] = all_act
 
     metadata = {
         "protocol": protocol,
