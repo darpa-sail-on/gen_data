@@ -13,3 +13,5 @@ augmentations:
         type: group
 dst_path: test_vid_dataset/augmented
 src_path: test_vid_dataset/original
+src_csv: data/ucf101_train_knowns_revised_dummy.csv
+seed: 2127

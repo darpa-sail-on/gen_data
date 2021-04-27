@@ -1,0 +1,55 @@
+augmentations:
+-   OneOf:
+        children:
+        -   Add:
+                initialize_params:
+                  value: 64
+        -   CenterCrop:
+                initialize_params:
+                  size: 224
+        -   CornerCrop:
+                initialize_params:
+                  size: 224
+        -   ElasticTransformation: {}
+        -   GaussianBlur:
+                initialize_params:
+                  sigma: 0.5
+        -   HorizontalFlip: {}
+        -   InvertColor: {}
+        -   Multiply:
+                initialize_params:
+                  value: 1.5
+        -   Pepper:
+                initialize_params:
+                  ratio: 500
+        -   PiecewiseAffineTransform: {}
+        -   RandomCrop:
+                initialize_params:
+                  size: 224
+        -   RandomResize:
+                initialize_params:
+                  rate: 0.5
+        -   RandomRotate:
+                initialize_params:
+                    degrees: 180
+        -   RandomShear:
+                initialize_params:
+                  x: 10
+                  y: 10
+        -   RandomTranslate:
+                initialize_params:
+                  x: 10
+                  y: 10
+        -   Salt:
+                initialize_params:
+                  ratio: 500
+        -   Superpixel:
+                initialize_params:
+                  p_replace: 0.5
+                  n_segments: 64
+        -   VerticalFlip: {}
+        type: group
+dst_path: UCF101-spatial-augmented
+src_path: UCF101
+src_csv: data/ucf101_train_knowns_revised_dummy.csv
+seed: 2127
