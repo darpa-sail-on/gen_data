@@ -143,7 +143,7 @@ def get_known_and_unknown(train, test, novelty_type):
             novelty_attr = row[novelty_type] 
             if isinstance(novelty_attr,str):
                 novelty_attr = novelty_attr.strip().lower()
-            if np.isnan(novelty_attr):
+            elif np.isnan(novelty_attr):
                 continue
             if novelty_attr in known_classes:
                 return_dict_known[vid_id] = label
