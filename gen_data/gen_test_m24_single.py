@@ -97,57 +97,61 @@ def sample_vids(videos, num_times_to_sample, num_samples, seed):
     assert sampled_vids.shape == (num_times_to_sample, num_samples)
     return sampled_vids
 
-def row_to_label(row, novelty_types):
-    s = []
-    for n in novelty_types:
-        if 'relation' in n:
-            # order of relation1 to relation2 doesn't matter. So we 'll just
-            # combine them and do string comparison
-            cl = []
-            for count in ['1','2']:
-                cl_x = row[n + count]
-                if isinstance(cl_x,str):
-                    cl_x = cl_x.strip().lower()
-                else:
-                    cl_x = str(cl_x)
-                cl.append(cl_x)
-            cl = '_'.join(sorted(cl))
-        else:
-            cl = row[n]
-        if isinstance(cl, str):
-            cl = cl.strip().lower()
-        s.append(cl)
-    return tuple(s)
-
-def get_known_and_unknown(train, test, novelty_types,
-        use_ontology_for_class=True):
-    known_classes = set()
-    for i in range(train.shape[0]):
-        known_classes.add(row_to_label(train.iloc[i], novelty_types))
-
-    return_dict_known, return_dict_unknown = OrderedDict(), OrderedDict()
-    unknown_classes = set()
-    for i in range(test.shape[0]):
-        row = test.iloc[i]
-        if use_ontology_for_class:
-            label = row['ontology_id']
-        else:
-            label = row['class']
-
-        vid_id = row['anonymous_id']
-        new_class = row_to_label(row, novelty_types)
-        if new_class not in known_classes:
-            is_novel = True
-            unknown_classes.add(new_class)
-        else:
-            is_novel = False
-
-        if is_novel:
-            return_dict_unknown[vid_id] = label
-        else:
-            return_dict_known[vid_id] = label
+def get_known_and_unknown(train, test, novelty_type):
+    if novelty_type == 'relation' or novelty_type == 'relation_type':
+        known_classes = set(train[novelty_type + '1'].dropna()).union(
+            set(train[novelty_type + '2'].dropna()))
+        unknown_classes = set(test[novelty_type + '1'].dropna()).union(
+            (test[novelty_type + '2'].dropna()))
+        unknown_classes -= known_classes
+    else:
+        assert novelty_type in ['class','perspective', 'ontology_id','location']
+        known_classes = set(train[novelty_type].dropna())
+        unknown_classes = set(test[novelty_type].dropna()) - known_classes
     assert len(known_classes) > 0
     assert len(unknown_classes) > 0
+    known_classes = [x.strip().lower() if isinstance(x, str) else x for x in list(known_classes)]
+    unknown_classes = [x.strip().lower() if isinstance(x, str) else x for x in list(unknown_classes)]
+    return_dict_known, return_dict_unknown = OrderedDict(), OrderedDict()
+    for i in range(test.shape[0]):
+        row = test.iloc[i]
+        label = row['ontology_id']
+        vid_id = row['anonymous_id']
+        assert vid_id not in return_dict_unknown
+        assert vid_id not in return_dict_known
+        
+        if novelty_type == 'relation' or novelty_type == 'relation_type':
+            is_novel = False
+            for count in ['1','2']:
+                novelty_attr = row[novelty_type + count]
+                if isinstance(novelty_attr,str):
+                    novelty_attr = novelty_attr.strip().lower()
+                elif np.isnan(novelty_attr):
+                    continue
+                if novelty_attr in known_classes:
+                    pass 
+                elif novelty_attr in unknown_classes:
+                    is_novel = True
+                else:
+                    raise ValueError(f'Novelty attr {novelty_attr} isn\'t in known or unknown')
+
+            if is_novel:
+                return_dict_unknown[vid_id] = label
+            else:
+                return_dict_known[vid_id] = label
+        else:
+            novelty_attr = row[novelty_type] 
+            if isinstance(novelty_attr,str):
+                novelty_attr = novelty_attr.strip().lower()
+            if np.isnan(novelty_attr):
+                continue
+            if novelty_attr in known_classes:
+                return_dict_known[vid_id] = label
+            elif novelty_attr in unknown_classes:
+                return_dict_unknown[vid_id] = label
+            else:
+                raise ValueError(f'Novelty attr {novelty_attr} isn\'t in known or unknown')
+
     return return_dict_known, return_dict_unknown
 
 def gen_test(
@@ -157,7 +161,7 @@ def gen_test(
     num_runs,
     num_samples_per_run,
     novelty_timestamp,
-    novelty_set,
+    aug_type, 
     output_test_dir,
     prob_novel_class=0.5,
     round_size=1,
@@ -194,7 +198,7 @@ def gen_test(
     training_file = pd.read_csv(training_file_csv) 
     testing_file = pd.read_csv(testing_file_csv)
     known_videos_dict, unknown_videos_dict = get_known_and_unknown(
-        training_file, testing_file, novelty_set)
+        training_file, testing_file, aug_type)
 
     assert len(known_videos_dict) >= num_samples_per_run
     upper_bound_timestamp = min(num_samples_per_run, len(known_videos_dict))
@@ -242,13 +246,12 @@ def gen_test(
         num_groups,
         num_unknown,
         seed)
-    
     for nr in trange(num_runs, desc="Runs"):
         for ng in trange(num_groups, desc="Groups"):
             df, metadata = create_individual_test(
                 known_video_sampling[ng], 
                 unknown_video_sampling[ng],
-                known_videos_dict, unknown_videos_dict, novelty_set,
+                known_videos_dict, unknown_videos_dict, aug_type,
                 random_timestamp, num_samples_per_run, round_size, 
                 prob_novel_class, seed, protocol)
 
@@ -272,7 +275,7 @@ def gen_test(
                 json.dump(metadata, f, sort_keys=True, indent=4)
 
 def create_individual_test(known_videos, unknown_videos,
-        known_videos_dict, unknown_videos_dict, novelty_set,
+        known_videos_dict, unknown_videos_dict, aug_type,
         novelty_timestamp, num_total_samples, round_size, 
         prob_novel_class, seed, protocol,
         make_novel_all_one_class=True):
@@ -297,10 +300,21 @@ def create_individual_test(known_videos, unknown_videos,
             known_classes.append(known_videos_dict[vid])
         del known_videos[vid_id]
 
+    if aug_type == "spatial":
+        is_spatial = 1
+        is_temporal = 0
+    elif aug_type == "temporal":
+        is_spatial = 0
+        is_temporal = 1
+    elif aug_type in ['class','perspective','ontology_id',
+            'location','relation','relation_type']:
+        is_spatial = is_temporal = 0
+    else:
+        raise NotImplementedError('Unknown aug_type {}'.format(aug_type))
+
     combine_known_unknown = [(k, 'known') for k in known_videos]
     combine_known_unknown += [(k, 'unknown') for k in unknown_videos]
     
-    is_temporal = is_spatial = 0
     red_light, red_light_det = None, -1
     for n in range(novelty_timestamp, num_total_samples):
         vid_id = np.random.choice(len(combine_known_unknown))
@@ -316,6 +330,11 @@ def create_individual_test(known_videos, unknown_videos,
             if activity not in unknown_classes:
                 unknown_classes.append(activity)
             
+            if make_novel_all_one_class:
+                # Make all unknown activities single class
+                assert 'novel' not in known_classes
+                activity = 'novel'
+
             # TODO: decide what to do with red_light when at novelty_timestamp
             # but sampling from known
             if red_light is None:
@@ -337,23 +356,6 @@ def create_individual_test(known_videos, unknown_videos,
 
     assert len(combine_known_unknown) == 0
   
-    if make_novel_all_one_class:
-        # Make all unknown activities single class
-        all_act = df["activity"]
-        all_act[all_act == -1] = int(len(known_classes))
-        #all_act[all_act>len(known_classes)] = len(known_classes)
-        
-        # TODO: decide what to do with NaN classes / ontologies
-        # For now, will keep them if they are novel
-        for i in np.where(all_act.isna().values)[0]:
-            if df.iloc[i]['novel'] != 1:
-                raise ValueError('Uses NaN for non novel sample')
-            else:
-                warnings.warn('Have NaN class for novel sample')
-            all_act[i] = int(len(known_classes))
-            
-        df["activity"] = all_act
-    
     metadata = {
         "protocol": protocol,
         "num_total_samples": num_total_samples,
@@ -375,7 +377,7 @@ def create_individual_test(known_videos, unknown_videos,
         "detection": red_light_det,
         "degree": 1,  # shouldn't be hardcoded
         "prob_novel": prob_novel_class,  # check not  'prop_novel'
-        "novel_type": novelty_set,
+        "novel_type": aug_type,
         "seed": seed,
         "actual_novel_activities": unknown_classes,  # maybe wrong
         "max_novel_classes": len(
@@ -411,10 +413,10 @@ def create_individual_test(known_videos, unknown_videos,
     help="# of total samples for each run")
 @click.option("--novelty_timestamp", type=click.Choice(["early", "in_middle", "late"]),
               help="at which timestep to introduce novelty")
-@click.option("--novelty_set", 
-    default=['class','perspective', 'location', 'ontology_id', 'relation',
-        'relation_type'],
-    help="List of novelty types to check for differences in 'testing_file_csv'")
+@click.option("--aug_type", default="class",
+    type=click.Choice(['class','perspective', 'location', 'ontology_id',
+        'relation','relation_type']), # TODO: add back in spatial/temporal
+    help="Which type of novelty is present in 'testing_file_csv'")
 @click.option(
     "--output_test_dir",
     "-o",
@@ -440,7 +442,7 @@ def main(
     num_runs,
     num_samples_per_run,
     novelty_timestamp,
-    novelty_set, 
+    aug_type, 
     output_test_dir,
     prob_novel_sample,
     round_size,
@@ -458,7 +460,7 @@ def main(
         num_runs=num_runs,
         num_samples_per_run=num_samples_per_run,
         novelty_timestamp=novelty_timestamp,
-        novelty_set=novelty_set,
+        aug_type=aug_type, 
         output_test_dir=output_test_dir,
         prob_novel_class=prob_novel_sample,
         round_size=round_size,
